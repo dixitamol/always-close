@@ -1,0 +1,16 @@
+{
+  "name": "Always Close",
+  "short_name": "Always Close",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#100609",
+  "theme_color": "#100609",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
