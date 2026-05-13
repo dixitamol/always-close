@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0d0608">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Always Close">
+  <title>Always Close</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d0608;
+      --surface: #1a0c0f;
+      --accent: #c9836a;
+      --accent-soft: #5a2e24;
+      --text: #e8d5cc;
+      --text-muted: #6b4a44;
+      --online: #7ec99a;
+      --pulse: rgba(201, 131, 106, 0.25);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Ambient background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 25% 20%, rgba(140, 55, 40, 0.18) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 50% at 75% 80%, rgba(90, 35, 25, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── App name ─── */
+    .app-name {
+      position: fixed;
+      top: 2.2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.75rem;
+      font-weight: 300;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      z-index: 10;
+      white-space: nowrap;
+    }
+
+    /* ─── Screens ─── */
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      z-index: 1;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(12px);
+    }
+
+    /* ─── Setup screen ─── */
+    #setupScreen .heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.8rem;
+      font-weight: 300;
+      letter-spacing: 0.04em;
+      color: var(--text);
+      text-align: center;
+      line-height: 1.1;
+      margin-bottom: 0.5rem;
+    }
+
+    #setupScreen .subheading {
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .role-buttons {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .role-btn {
+      background: var(--surface);
+      border: 1px solid var(--accent-soft);
+      color: var(--text);
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      font-weight: 300;
+      letter-spacing: 0.06em;
+      padding: 1.1rem 2.2rem;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: background 0.25s, border-color 0.25s, transform 0.15s;
+      -webkit-appearance: none;
+    }
+
+    .role-btn:active {
+      transform: scale(0.97);
+      background: var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .setup-note {
+      margin-top: 2rem;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-align: center;
+      max-width: 240px;
+      line-height: 1.6;
+    }
+
+    .error-msg {
+      margin-top: 1.2rem;
+      font-size: 0.75rem;
+      color: #c97a7a;
+      text-align: center;
+      max-width: 260px;
+      line-height: 1.5;
+    }
+
+    /* ─── Main screen ─── */
+    #mainScreen {
+      gap: 0;
+    }
+
+    /* Pulse rings */
+    .pulse-wrapper {
+      position: relative;
+      width: 180px;
+      height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    .ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 1px solid var(--pulse);
+      animation: ringPulse 3s ease-out infinite;
+    }
+    .ring:nth-child(2) { animation-delay: 1s; }
+    .ring:nth-child(3) { animation-delay: 2s; }
+
+    @keyframes ringPulse {
+      0%   { transform: scale(0.4); opacity: 1; }
+      100% { transform: scale(1.8); opacity: 0; }
+    }
+
+    /* Distance number */
+    .distance-block {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .distance-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(3.8rem, 18vw, 6.5rem);
+      font-weight: 300;
+      color: var(--accent);
+      line-height: 1;
+      letter-spacing: -0.02em;
+      transition: opacity 0.4s;
+    }
+
+    .distance-unit {
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 0.4rem;
+    }
+
+    /* Partner status row */
+    .partner-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 2.2rem;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      flex-shrink: 0;
+      transition: background 0.4s, box-shadow 0.4s;
+    }
+
+    .status-dot.online {
+      background: var(--online);
+      box-shadow: 0 0 8px rgba(126, 201, 154, 0.6);
+    }
+
+    .partner-text {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+    }
+
+    .last-updated {
+      margin-top: 0.6rem;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      opacity: 0.7;
+      min-height: 1em;
+    }
+
+    /* Heart */
+    .heart {
+      display: inline-block;
+      animation: heartbeat 2s ease-in-out infinite;
+      color: var(--accent);
+    }
+
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      14%  { transform: scale(1.25); }
+      28%  { transform: scale(1); }
+      42%  { transform: scale(1.15); }
+      56%  { transform: scale(1); }
+    }
+
+    /* Loading spinner */
+    .spinner {
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--accent-soft);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+  </style>
+</head>
+<body>
+
+<div class="app-name">Always Close</div>
+
+<!-- ── Setup ── -->
+<div class="screen" id="setupScreen">
+  <div class="heading">Always<br>Close</div>
+  <div class="subheading">Who are you?</div>
+  <div class="role-buttons">
+    <button class="role-btn" onclick="init('me')">Hubby <span class="heart"></button>
+    <button class="role-btn" onclick="init('her')">Wifey <span class="heart">♡</span></button>
+  </div>
+  <div class="setup-note">
+    Both open this link and pick your side.<br>Your location stays between you two.
+  </div>
+  <div class="error-msg" id="setupError"></div>
+</div>
+
+<!-- ── Main ── -->
+<div class="screen hidden" id="mainScreen">
+  <div class="pulse-wrapper">
+    <div class="ring"></div>
+    <div class="ring"></div>
+    <div class="ring"></div>
+    <div class="distance-block">
+      <div class="distance-value" id="distVal">—</div>
+      <div class="distance-unit" id="distUnit">locating…</div>
+    </div>
+  </div>
+
+  <div class="partner-row">
+    <div class="status-dot" id="partnerDot"></div>
+    <div class="partner-text" id="partnerText">Waiting for partner…</div>
+  </div>
+  <div class="last-updated" id="lastUpdated"></div>
+</div>
+
+<!-- Firebase 10 compat -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<script>
+// ================================================================
+//  🔧  FIREBASE CONFIG  — paste yours from the Firebase console
+// ================================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyAXcVB-iCQsPyy4j4G4Mawu28X03VmzM_U",
+  authDomain: "alwaysclose-305fb.firebaseapp.com",
+  databaseURL: "https://alwaysclose-305fb-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "alwaysclose-305fb",
+  storageBucket: "alwaysclose-305fb.firebasestorage.app",
+  messagingSenderId: "948767326477",
+  appId: "1:948767326477:web:f5bb29959d4e486b5c7044"
+};
+
+// ================================================================
+//  🔑  ROOM ID — private shared key, same on both phones
+//     Change this to something unique (e.g. "john_and_sara_2025")
+// ================================================================
+const ROOM_ID = "krati_amol";
+
+// ================================================================
+
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.database();
+
+let myRole      = null;   // 'me' | 'her'
+let partnerRole = null;
+let myPos       = null;
+let partnerPos  = null;
+let partnerTs   = null;
+let updatedInterval = null;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.toggle('hidden', s.id !== id);
+  });
+}
+
+function init(role) {
+  myRole      = role;
+  partnerRole = role === 'me' ? 'her' : 'me';
+  showScreen('mainScreen');
+  startLocation();
+  listenPartner();
+}
+
+/* ── Geolocation ── */
+function startLocation() {
+  if (!navigator.geolocation) {
+    setError('Geolocation not supported on this browser.');
+    return;
+  }
+
+  navigator.geolocation.watchPosition(
+    pos => {
+      myPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      db.ref(`${ROOM_ID}/${myRole}`).set({
+        lat: myPos.lat,
+        lng: myPos.lng,
+        ts:  Date.now()
+      });
+      updateDisplay();
+    },
+    err => {
+      console.warn('Geolocation error', err.code, err.message);
+    },
+    { enableHighAccuracy: true, maximumAge: 20000, timeout: 25000 }
+  );
+}
+
+/* ── Listen to partner ── */
+function listenPartner() {
+  db.ref(`${ROOM_ID}/${partnerRole}`).on('value', snap => {
+    const data = snap.val();
+    if (data) {
+      partnerPos = { lat: data.lat, lng: data.lng };
+      partnerTs  = data.ts;
+      setPartnerOnline(true);
+      updateDisplay();
+    } else {
+      setPartnerOnline(false);
+    }
+  });
+}
+
+/* ── UI helpers ── */
+function updateDisplay() {
+  if (!myPos || !partnerPos) return;
+
+  const km   = haversine(myPos.lat, myPos.lng, partnerPos.lat, partnerPos.lng);
+  const valEl  = document.getElementById('distVal');
+  const unitEl = document.getElementById('distUnit');
+
+  if (km < 0.05) {
+    valEl.textContent  = '♡';
+    unitEl.textContent = 'you\'re together';
+  } else if (km < 1) {
+    valEl.textContent  = Math.round(km * 1000);
+    unitEl.textContent = 'metres apart';
+  } else {
+    valEl.textContent  = km < 10 ? km.toFixed(1) : Math.round(km);
+    unitEl.textContent = 'km apart';
+  }
+}
+
+function setPartnerOnline(online) {
+  const dot  = document.getElementById('partnerDot');
+  const text = document.getElementById('partnerText');
+  const lu   = document.getElementById('lastUpdated');
+
+  dot.classList.toggle('online', online);
+
+  if (online) {
+    text.textContent = partnerRole === 'her'
+      ? 'Wifey is sharing location \u2665'
+      : 'Hubby is sharing location \u2665';
+    if (updatedInterval) clearInterval(updatedInterval);
+    updatedInterval = setInterval(() => {
+      if (!partnerTs) return;
+      const s = Math.round((Date.now() - partnerTs) / 1000);
+      lu.textContent = s < 10 ? 'Updated just now' : `Updated ${s}s ago`;
+    }, 5000);
+    // fire immediately
+    const s = Math.round((Date.now() - partnerTs) / 1000);
+    lu.textContent = s < 10 ? 'Updated just now' : `Updated ${s}s ago`;
+  } else {
+    text.textContent = 'Partner not connected yet';
+    lu.textContent   = '';
+    if (updatedInterval) clearInterval(updatedInterval);
+  }
+}
+
+function setError(msg) {
+  document.getElementById('setupError').textContent = msg;
+}
+
+/* ── Haversine ── */
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2
+          + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180)
+          * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+</script>
+</body>
+</html>
